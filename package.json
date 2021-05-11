@@ -1,0 +1,27 @@
+{
+  "name": "redisbasedapi",
+  "version": "1.0.0",
+  "description": "redis based API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app",
+    "dev": "nodemon app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DrorTsky/RedisBasedAPI.git"
+  },
+  "author": "Dror Tartakovsky",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DrorTsky/RedisBasedAPI/issues"
+  },
+  "homepage": "https://github.com/DrorTsky/RedisBasedAPI#readme",
+  "dependencies": {
+    "async": "^3.2.0",
+    "express-handlebars": "^5.3.2",
+    "method-override": "^3.0.0",
+    "moment": "^2.29.1",
+    "redis": "^3.1.2"
+  }
+}
