@@ -35,9 +35,16 @@ router.post("/:user_name/:email", (req, res, next) => {
   });
 });
 
-router.get("/get", (req, res, next) => {
-  console.log("object");
-  res.send("getting item");
+router.get("/:user_name/:email/:item_name", (req, res, next) => {
+  //check if item exists
+  let key = req.params.email + "@@" + req.params.item_name;
+  client.hgetall(key, (err, object) => {
+    if (object) {
+      //if exists return item
+      let parsed_item = JSON.parse(object.stringified_item);
+      res.send(parsed_item);
+    } else res.status(404).json({ msg: "item doesn't exists" }); //if doesn't exists notify
+  });
 });
 
 module.exports = router;
