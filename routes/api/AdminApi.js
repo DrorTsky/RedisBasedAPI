@@ -3,6 +3,7 @@ const router = express.Router();
 var async = require("async");
 let client = require("../../redis-db");
 
+//USER RELATED ADMIN API'S
 router.get("/users/:id", async (req, res, next) => {
   client.keys("*", async (err, keys) => {
     if (keys) {
@@ -38,5 +39,8 @@ router.delete("/flushall", (req, res, next) => {
     res.send("deleted all data");
   });
 });
+
+//ITEM RELATED ADMIN API'S
+router.delete("/items/:id", (req, res, next) => {});
 
 module.exports = router;
