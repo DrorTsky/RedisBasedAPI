@@ -3,6 +3,7 @@ const { object } = require("../../redis-db");
 const router = express.Router();
 let client = require("../../redis-db");
 
+// create item
 router.post("/:user_name/:email", (req, res, next) => {
   console.log("in items post");
   // attributes
@@ -35,6 +36,7 @@ router.post("/:user_name/:email", (req, res, next) => {
   });
 });
 
+//get single item
 router.get("/:user_name/:email/:item_name", (req, res, next) => {
   //check if item exists
   let key = req.params.email + "@@" + req.params.item_name;
@@ -44,6 +46,25 @@ router.get("/:user_name/:email/:item_name", (req, res, next) => {
       let parsed_item = JSON.parse(object.stringified_item);
       res.send(parsed_item);
     } else res.status(404).json({ msg: "item doesn't exists" }); //if doesn't exists notify
+  });
+});
+
+//get all items
+router.get("/:user_name/:email", (req, res, next) => {
+  client.keys(`${req.params.email}@@*`, async (err, keys) => {
+    if (keys) {
+      var items = {};
+      keys.forEach((key, index, array) => {
+        client.hgetall(key, (err, object) => {
+          items[key] = JSON.parse(object.stringified_item);
+          if (array.length === Object.keys(items).length) {
+            res.send(items);
+          }
+        });
+      });
+    } else {
+      res.send("empty database");
+    }
   });
 });
 
