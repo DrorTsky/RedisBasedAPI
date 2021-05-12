@@ -30,7 +30,7 @@ router.delete("/users/:id", (req, res, next) => {
           if (index + 1 === array.length) res.send("users were deleted");
         });
       });
-    } else res.send("no users");
+    } else res.status(404).json({ msg: "no users to delete" });
   });
 });
 
@@ -41,6 +41,16 @@ router.delete("/flushall", (req, res, next) => {
 });
 
 //ITEM RELATED ADMIN API'S
-router.delete("/items/:id", (req, res, next) => {});
+router.delete("/items/:id", (req, res, next) => {
+  client.keys("*@*@@*", (err, keys) => {
+    if (keys.length !== 0) {
+      keys.forEach((key, index, array) => {
+        client.del(key, () => {
+          if (index + 1 === array.length) res.send("all items were deleted");
+        });
+      });
+    } else res.status(404).json({ msg: "no items to delete" });
+  });
+});
 
 module.exports = router;
