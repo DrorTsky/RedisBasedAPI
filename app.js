@@ -37,6 +37,7 @@ app.use(methodOverride("_method"));
 app.use("/user", require("./routes/api/UserApi"));
 app.use("/admin", require("./routes/api/AdminApi"));
 app.use("/items", require("./routes/api/ItemApi"));
+app.use("/shopping_list", require("./routes/api/ShoppingListApi"));
 
 app.listen(port, function () {
   console.log("Server started on port " + port);
