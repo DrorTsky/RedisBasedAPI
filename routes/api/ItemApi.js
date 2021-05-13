@@ -2,69 +2,87 @@ const express = require("express");
 const router = express.Router();
 let client = require("../../redis-db");
 
-// create item
-router.post("/:user_name/:email", (req, res) => {
-  client.exists(req.params.email + "@@" + req.body.name, (err, object) => {
-    if (object === 0) {
-      // new item
-      const item = createItemForStringify(req);
-      //stringify dictionary
-      let stringified_item = JSON.stringify(item);
-      //save to database
-      client.hmset(
-        item["id"],
-        ["stringified_item", stringified_item],
-        (err, object) => {
-          if (object === "OK") {
-            res.json({ msg: "item added", item: req.body });
-          } else {
-            res.status(400).json({ msg: "failed to add item" });
-          }
-        }
-      );
-    } else {
-      res.status(400).json({ msg: "item already exists" });
-    }
-  });
-});
-
 //get single item
-router.get("/:user_name/:email/:item_name", (req, res) => {
-  //check if item exists
-  let key = req.params.email + "@@" + req.params.item_name;
-  client.hgetall(key, (err, object) => {
+router.get("/:user_name/:email/:shopping_list_id/:item_name", (req, res) => {
+  //check if list exists
+  const shopping_list_id = req.params.shopping_list_id + ":items";
+  client.exists(shopping_list_id, (err, object) => {
     if (object) {
-      //if exists return item
-      let parsed_item = JSON.parse(object.stringified_item);
-      res.send(parsed_item);
-    } else res.status(404).json({ msg: "item doesn't exists" }); //if doesn't exists notify
-  });
-});
-
-//get all items related to user
-router.get("/:user_name/:email", (req, res) => {
-  client.keys(`${req.params.email}@@*`, async (err, keys) => {
-    if (keys.length) {
-      var items = {};
-      keys.forEach((key, index, array) => {
-        client.hgetall(key, (err, object) => {
-          items[key] = JSON.parse(object.stringified_item);
-          if (array.length === Object.keys(items).length) {
-            res.send(items);
+      client.lrange(shopping_list_id, 0, -1, (err, items) => {
+        if (items.length) {
+          for (var index = 0; index < items.length; index++) {
+            client.hgetall(items[index], (err, object) => {
+              if (
+                JSON.parse(object.stringified_item).name ===
+                req.params.item_name
+              ) {
+                res.send(JSON.parse(object.stringified_item));
+              } else {
+                if (index === items.length) {
+                  res.status(404).json({
+                    msg: `could not find item: ${req.params.item_name}`,
+                  });
+                }
+              }
+            });
           }
-        });
+        } else {
+          res.status(404).json({
+            msg: `could not find item: ${req.params.item_name}`,
+          });
+        }
       });
     } else {
-      res.send("empty database");
+      res
+        .status(404)
+        .json({ msg: `could not find shopping list: ${shopping_list_id}` });
     }
   });
 });
 
-//item has no need to be deleted, he can be updated to {active: false}
+//delete item
+router.delete("/:user_name/:email/:shopping_list_id/:item_name", (req, res) => {
+  //check if list exists
+  const shopping_list_id = req.params.shopping_list_id + ":items";
+  const item_key = req.params.shopping_list_id + "@@" + req.params.item_name;
+  client.exists(shopping_list_id, (err, object) => {
+    if (object) {
+      client.lrange(shopping_list_id, 0, -1, (err, items) => {
+        if (items.includes(item_key)) {
+          client.lrem(shopping_list_id, 0, item_key, (err, object) => {
+            if (object) {
+              client.del(item_key, (err, obj) => {
+                if (object) {
+                  res.send(`removed item: ${req.params.item_name}`);
+                } else {
+                  res.status(400).json({
+                    msg: `failed to remove item: ${req.params.item_name}`,
+                  });
+                }
+              });
+            } else {
+              res.status(400).json({
+                msg: `failed to remove item: ${req.params.item_name}`,
+              });
+            }
+          });
+        } else {
+          res
+            .status(404)
+            .json({ msg: `could not find item: ${req.params.item_name}` });
+        }
+      });
+    } else {
+      res
+        .status(404)
+        .json({ msg: `could not find shopping list: ${shopping_list_id}` });
+    }
+  });
+});
 
 //update single item
-router.put("/:user_name/:email/:item_name", (req, res) => {
-  let key = req.params.email + "@@" + req.params.item_name;
+router.put("/:user_name/:email/:list_id/:item_name", (req, res) => {
+  let key = req.params.list_id + "@@" + req.params.item_name;
   client.hgetall(key, (err, object) => {
     if (object) {
       //if exists update item
@@ -85,6 +103,8 @@ router.put("/:user_name/:email/:item_name", (req, res) => {
         (err, object) => {
           if (object === "OK") {
             res.json({ msg: "item added", item: req.body });
+          } else {
+            res.status(400).json({ msg: `failed to add item`, item: req.body });
           }
         }
       );
@@ -92,33 +112,70 @@ router.put("/:user_name/:email/:item_name", (req, res) => {
   });
 });
 
-// connect item to shopping list
-router.put("/:user_name/:email/:list_name/:item_name", (req, res) => {
-  const list_key = req.params.email + "@@" + req.params.list_name;
-  client.hgetall(list_key, (err, list_object) => {
-    if (list_object) {
-      //if list exists check for item
-      const item_key = req.params.email + "@@" + req.params.item_name;
-      client.exists(item_key, (err, object) => {
-        if (object === 1) {
-          let new_item = JSON.parse(list_object.stringified_item);
-          item_inside_list_id = req.params.email + "@@" + req.params.item_name;
-          new_item.item_attributes[item_inside_list_id] = req.params.item_name;
-          updateItem(list_key, new_item, res);
+//get all items inside shopping list
+router.get("/:user_name/:email/:shopping_list_id", (req, res) => {
+  const shopping_list_id = req.params.shopping_list_id + ":items";
+  client.exists(shopping_list_id, (err, object) => {
+    if (object) {
+      client.lrange(shopping_list_id, 0, -1, (err, items) => {
+        if (items.length) {
+          var all_items = [];
+          items.forEach((item) => {
+            client.hgetall(item, (err, object) => {
+              all_items.push(JSON.parse(object.stringified_item));
+              console.log(all_items);
+            });
+          });
+          console.log(all_items);
+          if (all_items.length === items.length) res.send(all_items);
         } else {
-          res
-            .status(404)
-            .json({ msg: `item: ${req.params.item_name} not found` });
+          res.send("empty list");
         }
       });
     } else {
-      //if doesn't create item
       res
         .status(404)
-        .json({ msg: `shopping list: ${req.params.list_name} not found` });
+        .json({ msg: `could not file shopping list: ${shopping_list_id}` });
     }
   });
 });
+
+// create new item inside shopping list
+router.post("/:user_name/:email/:shopping_list_id", (req, res) => {
+  const shopping_list_id = req.params.shopping_list_id;
+  client.exists(shopping_list_id, (err, object) => {
+    if (object) {
+      const item = createItemForStringify(req, shopping_list_id);
+      const stringified_item = JSON.stringify(item);
+      //create the item hash
+      client.hmset(
+        item["id"],
+        ["stringified_item", stringified_item],
+        (err, object) => {
+          if (object === "OK") {
+            // res.json({ msg: "item added", item: req.body });
+            console.log(`created item ${item["name"]}`);
+          } else {
+            // res.status(400).json({ msg: "failed to add item" });
+            console.log(`failed to create item ${item["name"]}`);
+          }
+        }
+      );
+      //add item to shopping list list
+      client.lpush(shopping_list_id + ":items", item["id"], (err, object) => {
+        if (object) {
+          res.send(item["id"]);
+        } else {
+          res.status(400).json({ msg: `failed to add item ${item["id"]}` });
+        }
+      });
+    } else {
+      res.status(404).json({ msg: `shopping list ${id} not found` });
+    }
+  });
+});
+// connect item to shopping list
+// router.put("/:user_name/:email/:list_id/:item_name", (req, res) => {});
 
 // helper functions
 
@@ -136,7 +193,7 @@ function updateItem(key, new_item, res) {
   );
 }
 
-function createItemForStringify(req) {
+function createItemForStringify(req, id = "no_id") {
   // attributes
   //in body
   let type = req.body.type;
@@ -146,10 +203,10 @@ function createItemForStringify(req) {
   //not in body
   let time_stamp = new Date();
   let created_by = req.params.user_name + "@@" + req.params.email;
-  let id = req.params.email + "@@" + req.body.name;
+  let item_id = id + "@@" + req.body.name;
   //create dictionary
   const item = {
-    id: id,
+    id: item_id,
     created_by: created_by,
     name: name,
     type: type,
