@@ -52,8 +52,30 @@ router.post("/:user_name/:email", (req, res) => {
   });
 });
 
-// add single one or many users to shopping
-router.put("/:user_name/:email/:shopping_list_id", (req, res) => {});
+// add single user to shopping list
+router.put("/:user_name/:email/:shopping_list_id", (req, res) => {
+  console.log("in put");
+  const shopping_list_key = `${req.params.shopping_list_id}:users`;
+  const user = `${req.params.user_name}@@${req.params.email}`;
+  client.exists(shopping_list_key, (err, object) => {
+    if (object) {
+      client.lpush(shopping_list_key, user, (err, object) => {
+        if (object) {
+          client.lrange(shopping_list_key, 0, -1, (err, users) => {
+            if (users.length) {
+              addShoppingListToUserList(user, shopping_list_key);
+              res.send(users);
+            } else {
+              res.status(400).json({ msg: `failed adding user ${user}` });
+            }
+          });
+        }
+      });
+    } else {
+      res.status(404).send(`shopping list not found ${shopping_list_key}`);
+    }
+  });
+});
 
 // get all shopping lists related to specific user
 router.get("/:user_name/:email", (req, res, next) => {
@@ -80,29 +102,39 @@ router.get("/:user_name/:email", (req, res, next) => {
   );
 });
 
-function addShoppingListToUserList(user, id) {
+function addShoppingListToUserList(user, shopping_list_key) {
   client.exists(user, (err, object) => {
     if (object) {
-      client.lpush(user + ":shopping_lists", id, (err, object) => {
-        if (object) {
-          console.log("list added to user");
-        } else {
-          console.log(err);
+      client.lpush(
+        user + ":shopping_lists",
+        shopping_list_key,
+        (err, object) => {
+          if (object) {
+            console.log("list added to user");
+          } else {
+            console.log(err);
+          }
         }
-      });
+      );
     } else {
       console.log(`user: ${user} not found`);
     }
   });
 }
-function addUserToShoppingListList(index, user, req, res, id) {
-  client.lpush(id + ":users", user, (err, object) => {
+function addUserToShoppingListList(index, user, req, res, shopping_list_key) {
+  client.exists(user, (err, object) => {
     if (object) {
-      if (!req.body.users[index + 1]) {
-        console.log("added user to list");
-      }
+      client.lpush(shopping_list_key + ":users", user, (err, object) => {
+        if (object) {
+          if (!req.body.users[index + 1]) {
+            console.log("added user to list");
+          }
+        } else {
+          console.log("failed to add user to list");
+        }
+      });
     } else {
-      console.log("failed to add user to list");
+      console.log(`user not found ${user}`);
     }
   });
 }
