@@ -135,6 +135,7 @@ router.delete("/:user_name/:email/:shopping_list_id", (req, res) => {
     }
   });
 });
+
 // helper functions
 
 function addShoppingListToUserList(user, shopping_list_key) {
