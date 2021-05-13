@@ -123,11 +123,9 @@ router.get("/:user_name/:email/:shopping_list_id", (req, res) => {
           items.forEach((item) => {
             client.hgetall(item, (err, object) => {
               all_items.push(JSON.parse(object.stringified_item));
-              console.log(all_items);
+              if (all_items.length === items.length) res.send(all_items);
             });
           });
-          console.log(all_items);
-          if (all_items.length === items.length) res.send(all_items);
         } else {
           res.send("empty list");
         }
