@@ -1,10 +1,9 @@
 const express = require("express");
-const { object } = require("../../redis-db");
 const router = express.Router();
 let client = require("../../redis-db");
 
 // create item
-router.post("/:user_name/:email", (req, res, next) => {
+router.post("/:user_name/:email", (req, res) => {
   client.exists(req.params.email + "@@" + req.body.name, (err, object) => {
     if (object === 0) {
       // new item
@@ -18,6 +17,8 @@ router.post("/:user_name/:email", (req, res, next) => {
         (err, object) => {
           if (object === "OK") {
             res.json({ msg: "item added", item: req.body });
+          } else {
+            res.status(400).json({ msg: "failed to add item" });
           }
         }
       );
@@ -28,7 +29,7 @@ router.post("/:user_name/:email", (req, res, next) => {
 });
 
 //get single item
-router.get("/:user_name/:email/:item_name", (req, res, next) => {
+router.get("/:user_name/:email/:item_name", (req, res) => {
   //check if item exists
   let key = req.params.email + "@@" + req.params.item_name;
   client.hgetall(key, (err, object) => {
@@ -41,7 +42,7 @@ router.get("/:user_name/:email/:item_name", (req, res, next) => {
 });
 
 //get all items related to user
-router.get("/:user_name/:email", (req, res, next) => {
+router.get("/:user_name/:email", (req, res) => {
   client.keys(`${req.params.email}@@*`, async (err, keys) => {
     if (keys.length) {
       var items = {};
@@ -62,7 +63,7 @@ router.get("/:user_name/:email", (req, res, next) => {
 //item has no need to be deleted, he can be updated to {active: false}
 
 //update single item
-router.put("/:user_name/:email/:item_name", (req, res, next) => {
+router.put("/:user_name/:email/:item_name", (req, res) => {
   let key = req.params.email + "@@" + req.params.item_name;
   client.hgetall(key, (err, object) => {
     if (object) {
@@ -92,7 +93,7 @@ router.put("/:user_name/:email/:item_name", (req, res, next) => {
 });
 
 // connect item to shopping list
-router.put("/:user_name/:email/:list_name/:item_name", (req, res, next) => {
+router.put("/:user_name/:email/:list_name/:item_name", (req, res) => {
   const list_key = req.params.email + "@@" + req.params.list_name;
   client.hgetall(list_key, (err, list_object) => {
     if (list_object) {
