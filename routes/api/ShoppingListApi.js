@@ -102,6 +102,41 @@ router.get("/:user_name/:email", (req, res, next) => {
   );
 });
 
+// delete specific list
+router.delete("/:user_name/:email/:shopping_list_id", (req, res) => {
+  const id = req.params.shopping_list_id;
+  client.exists(id, (err, object) => {
+    const key = id + ":users";
+    if (object) {
+      //delete shopping list from user lists
+      client.lrange(key, 0, -1, (err, users) => {
+        users.forEach((user) => {
+          let user_list_key = user + ":shopping_lists";
+          client.lrem(user_list_key, 0, id, (err, object) => {
+            if (object) {
+              console.log(`removed shopping list from ${user} list`);
+            } else {
+              console.log(`failed to removed ${id} from ${user} list`);
+            }
+          });
+        });
+      });
+      //delete shopping list list
+      //delete shopping list hash
+      client.del(id, key, (err, object) => {
+        if (object) {
+          res.send("shopping list removed");
+        } else {
+          res.status(400).json({ msg: `failed to remove ${id}` });
+        }
+      });
+    } else {
+      res.status(404).json({ msg: `shopping list ${id} not found` });
+    }
+  });
+});
+// helper functions
+
 function addShoppingListToUserList(user, shopping_list_key) {
   client.exists(user, (err, object) => {
     if (object) {
