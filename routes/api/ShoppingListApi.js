@@ -111,9 +111,20 @@ router.get("/:user_name/:email", (req, res, next) => {
   );
 });
 
-router.get("/:user_name/", (req, res) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.send("Hello Wold");
+router.get("/:user_name/:email/:shopping_list_id", (req, res) => {
+  const id = req.params.shopping_list_id;
+  client.exists(id, (err, object) => {
+    if (object) {
+      client.hgetall(id, (err, shopping_list) => {
+        res.header("Access-Control-Allow-Origin", "*");
+        res.send(shopping_list);
+        // res.send(JSON.parse(shopping_list));
+      });
+    } else {
+      res.header("Access-Control-Allow-Origin", "*");
+      res.status(404).json({ msg: "shopping list not found" });
+    }
+  });
 });
 
 // delete specific list
