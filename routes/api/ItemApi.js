@@ -16,9 +16,11 @@ router.get("/:user_name/:email/:shopping_list_id/:item_name", (req, res) => {
                 JSON.parse(object.stringified_item).name ===
                 req.params.item_name
               ) {
+                res.header("Access-Control-Allow-Origin", "*");
                 res.send(JSON.parse(object.stringified_item));
               } else {
                 if (index === items.length) {
+                  res.header("Access-Control-Allow-Origin", "*");
                   res.status(404).json({
                     msg: `could not find item: ${req.params.item_name}`,
                   });
@@ -27,12 +29,14 @@ router.get("/:user_name/:email/:shopping_list_id/:item_name", (req, res) => {
             });
           }
         } else {
+          res.header("Access-Control-Allow-Origin", "*");
           res.status(404).json({
             msg: `could not find item: ${req.params.item_name}`,
           });
         }
       });
     } else {
+      res.header("Access-Control-Allow-Origin", "*");
       res
         .status(404)
         .json({ msg: `could not find shopping list: ${shopping_list_id}` });
@@ -53,14 +57,17 @@ router.delete("/:user_name/:email/:shopping_list_id/:item_name", (req, res) => {
             if (object) {
               client.del(item_key, (err, obj) => {
                 if (object) {
+                  res.header("Access-Control-Allow-Origin", "*");
                   res.send(`removed item: ${req.params.item_name}`);
                 } else {
+                  res.header("Access-Control-Allow-Origin", "*");
                   res.status(400).json({
                     msg: `failed to remove item: ${req.params.item_name}`,
                   });
                 }
               });
             } else {
+              res.header("Access-Control-Allow-Origin", "*");
               res.status(400).json({
                 msg: `failed to remove item: ${req.params.item_name}`,
               });
@@ -73,6 +80,7 @@ router.delete("/:user_name/:email/:shopping_list_id/:item_name", (req, res) => {
         }
       });
     } else {
+      res.header("Access-Control-Allow-Origin", "*");
       res
         .status(404)
         .json({ msg: `could not find shopping list: ${shopping_list_id}` });
@@ -102,8 +110,10 @@ router.put("/:user_name/:email/:list_id/:item_name", (req, res) => {
         ["stringified_item", stringified_item],
         (err, object) => {
           if (object === "OK") {
+            res.header("Access-Control-Allow-Origin", "*");
             res.json({ msg: "item added", item: req.body });
           } else {
+            res.header("Access-Control-Allow-Origin", "*");
             res.status(400).json({ msg: `failed to add item`, item: req.body });
           }
         }
@@ -123,14 +133,19 @@ router.get("/:user_name/:email/:shopping_list_id", (req, res) => {
           items.forEach((item) => {
             client.hgetall(item, (err, object) => {
               all_items.push(JSON.parse(object.stringified_item));
-              if (all_items.length === items.length) res.send(all_items);
+              if (all_items.length === items.length) {
+                res.header("Access-Control-Allow-Origin", "*");
+                res.send(all_items);
+              }
             });
           });
         } else {
+          res.header("Access-Control-Allow-Origin", "*");
           res.send("empty list");
         }
       });
     } else {
+      res.header("Access-Control-Allow-Origin", "*");
       res
         .status(404)
         .json({ msg: `could not file shopping list: ${shopping_list_id}` });
@@ -162,12 +177,15 @@ router.post("/:user_name/:email/:shopping_list_id", (req, res) => {
       //add item to shopping list list
       client.lpush(shopping_list_id + ":items", item["id"], (err, object) => {
         if (object) {
+          res.header("Access-Control-Allow-Origin", "*");
           res.send(item["id"]);
         } else {
+          res.header("Access-Control-Allow-Origin", "*");
           res.status(400).json({ msg: `failed to add item ${item["id"]}` });
         }
       });
     } else {
+      res.header("Access-Control-Allow-Origin", "*");
       res.status(404).json({ msg: `shopping list ${id} not found` });
     }
   });
@@ -183,8 +201,10 @@ function updateItem(key, new_item, res) {
     ["stringified_item", JSON.stringify(new_item)],
     (err, object) => {
       if (object === "OK") {
+        res.header("Access-Control-Allow-Origin", "*");
         res.json({ msg: "item updated", item: new_item });
       } else {
+        res.header("Access-Control-Allow-Origin", "*");
         res.status(400).json({ msg: "failed updating item" });
       }
     }

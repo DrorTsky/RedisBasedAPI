@@ -40,13 +40,16 @@ router.post("/:user_name/:email", (req, res) => {
                 id
               );
             }
+            res.header("Access-Control-Allow-Origin", "*");
             res.json({ msg: "shopping list added", item: req.body });
           } else {
+            res.header("Access-Control-Allow-Origin", "*");
             res.status(400).json({ msg: "failed to add list" });
           }
         }
       );
     } else {
+      res.header("Access-Control-Allow-Origin", "*");
       res.status(400).json({ msg: "shopping list already exists" });
     }
   });
@@ -64,14 +67,17 @@ router.put("/:user_name/:email/:shopping_list_id", (req, res) => {
           client.lrange(shopping_list_key, 0, -1, (err, users) => {
             if (users.length) {
               addShoppingListToUserList(user, shopping_list_key);
+              res.header("Access-Control-Allow-Origin", "*");
               res.send(users);
             } else {
+              res.header("Access-Control-Allow-Origin", "*");
               res.status(400).json({ msg: `failed adding user ${user}` });
             }
           });
         }
       });
     } else {
+      res.header("Access-Control-Allow-Origin", "*");
       res.status(404).send(`shopping list not found ${shopping_list_key}`);
     }
   });
@@ -89,17 +95,25 @@ router.get("/:user_name/:email", (req, res, next) => {
           -1,
           (err, shopping_lists) => {
             if (shopping_lists.length) {
+              res.header("Access-Control-Allow-Origin", "*");
               res.send(shopping_lists);
             } else {
+              res.header("Access-Control-Allow-Origin", "*");
               res.json({ msg: "empty array" });
             }
           }
         );
       } else {
+        res.header("Access-Control-Allow-Origin", "*");
         res.status(404).json({ msg: "shopping list not found" });
       }
     }
   );
+});
+
+router.get("/:user_name/", (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.send("Hello Wold");
 });
 
 // delete specific list
@@ -125,12 +139,15 @@ router.delete("/:user_name/:email/:shopping_list_id", (req, res) => {
       //delete shopping list hash
       client.del(id, key, (err, object) => {
         if (object) {
+          res.header("Access-Control-Allow-Origin", "*");
           res.send("shopping list removed");
         } else {
+          res.header("Access-Control-Allow-Origin", "*");
           res.status(400).json({ msg: `failed to remove ${id}` });
         }
       });
     } else {
+      res.header("Access-Control-Allow-Origin", "*");
       res.status(404).json({ msg: `shopping list ${id} not found` });
     }
   });
