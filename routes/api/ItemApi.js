@@ -166,10 +166,8 @@ router.post("/:user_name/:email/:shopping_list_id", (req, res) => {
         ["stringified_item", stringified_item],
         (err, object) => {
           if (object === "OK") {
-            // res.json({ msg: "item added", item: req.body });
             console.log(`created item ${item["name"]}`);
           } else {
-            // res.status(400).json({ msg: "failed to add item" });
             console.log(`failed to create item ${item["name"]}`);
           }
         }
@@ -177,8 +175,9 @@ router.post("/:user_name/:email/:shopping_list_id", (req, res) => {
       //add item to shopping list list
       client.lpush(shopping_list_id + ":items", item["id"], (err, object) => {
         if (object) {
-          res.header("Access-Control-Allow-Origin", "*");
-          res.send(item["id"]);
+          // res.header("Access-Control-Allow-Origin", "*");
+          // res.send(item["id"]);
+          res.send({ id: item["id"] });
         } else {
           res.header("Access-Control-Allow-Origin", "*");
           res.status(400).json({ msg: `failed to add item ${item["id"]}` });

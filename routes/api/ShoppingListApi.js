@@ -60,25 +60,34 @@ router.put("/:user_name/:email/:shopping_list_id", (req, res) => {
   console.log("in put");
   const shopping_list_key = `${req.params.shopping_list_id}:users`;
   const user = `${req.params.user_name}@@${req.params.email}`;
-  client.exists(shopping_list_key, (err, object) => {
+  client.exists(user, (err, object) => {
     if (object) {
-      client.lpush(shopping_list_key, user, (err, object) => {
+      client.exists(shopping_list_key, (err, object) => {
         if (object) {
-          client.lrange(shopping_list_key, 0, -1, (err, users) => {
-            if (users.length) {
-              addShoppingListToUserList(user, shopping_list_key);
-              res.header("Access-Control-Allow-Origin", "*");
-              res.send(users);
-            } else {
-              res.header("Access-Control-Allow-Origin", "*");
-              res.status(400).json({ msg: `failed adding user ${user}` });
-            }
+          client.lrem(shopping_list_key, 0, user, (err, object) => {
+            client.lpush(shopping_list_key, user, (err, object) => {
+              if (object) {
+                client.lrange(shopping_list_key, 0, -1, (err, users) => {
+                  if (users.length) {
+                    addShoppingListToUserList(user, shopping_list_key);
+                    res.header("Access-Control-Allow-Origin", "*");
+                    res.send(users);
+                  } else {
+                    res.header("Access-Control-Allow-Origin", "*");
+                    res.status(400).json({ msg: `failed adding user ${user}` });
+                  }
+                });
+              }
+            });
           });
+        } else {
+          res.header("Access-Control-Allow-Origin", "*");
+          res.status(404).send(`shopping list not found ${shopping_list_key}`);
         }
       });
     } else {
       res.header("Access-Control-Allow-Origin", "*");
-      res.status(404).send(`shopping list not found ${shopping_list_key}`);
+      res.status(404).send(`user not found ${req.params.email}`);
     }
   });
 });
@@ -95,6 +104,7 @@ router.get("/:user_name/:email", (req, res, next) => {
           -1,
           (err, shopping_lists) => {
             if (shopping_lists.length) {
+              console.log(shopping_lists);
               res.header("Access-Control-Allow-Origin", "*");
               res.send(shopping_lists);
             } else {
