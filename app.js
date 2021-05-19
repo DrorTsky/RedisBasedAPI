@@ -1,5 +1,5 @@
 const express = require("express");
-const exphbs = require("express-handlebars");
+var exphbs = require("express-handlebars");
 const path = require("path");
 const moment = require("moment");
 const bodyParser = require("body-parser");
@@ -23,9 +23,13 @@ const logger = (req, res, next) => {
 
 app.use(logger);
 
-// View Engine\
-app.engine("handlebars", exphbs({ defaultLayout: "main" }));
+// View Engine
+app.engine("handlebars", exphbs());
 app.set("view engine", "handlebars");
+
+app.get("/", function (req, res) {
+  res.render("home");
+});
 
 // body-parser
 app.use(express.json());
