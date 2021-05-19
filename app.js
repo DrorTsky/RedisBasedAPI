@@ -6,7 +6,7 @@ const bodyParser = require("body-parser");
 const methodOverride = require("method-override");
 
 // Set Port
-const port = 18441;
+// const port = 18441;
 
 // Init app
 const app = express();
@@ -67,6 +67,6 @@ app.use("/admin", require("./routes/api/AdminApi"));
 app.use("/items", require("./routes/api/ItemApi"));
 app.use("/shopping_list", require("./routes/api/ShoppingListApi"));
 
-app.listen(port, function () {
-  console.log("Server started on port " + port);
-});
+// app.listen(port, function () {
+//   console.log("Server started on port " + port);
+// });
